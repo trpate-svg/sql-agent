@@ -117,6 +117,11 @@ def format_response(question: str, sql: str, rows: list[dict]) -> str:
 
 
 def answer(question: str) -> str:
+    response, _ = answer_with_sql(question)
+    return response
+
+
+def answer_with_sql(question: str) -> tuple[str, str]:
     sql = generate_sql(question)
 
     valid, error = validate_sql(sql)
@@ -127,19 +132,19 @@ def answer(question: str) -> str:
         )
         valid, error = validate_sql(sql)
         if not valid:
-            return f"Impossible de générer une requête valide : {error}"
+            return f"Impossible de générer une requête valide : {error}", sql
 
     try:
         rows = execute_sql(sql)
     except sqlite3.OperationalError as e:
-        return f"Erreur SQL : {e}\n\nRequête tentée :\n```sql\n{sql}\n```"
+        return f"Erreur SQL : {e}\n\nRequête tentée :\n```sql\n{sql}\n```", sql
     except sqlite3.DatabaseError as e:
-        return f"Erreur base de données : {e}"
+        return f"Erreur base de données : {e}", sql
 
     if not rows:
-        return "Aucun résultat trouvé pour cette requête."
+        return "Aucun résultat trouvé pour cette requête.", sql
 
-    return format_response(question, sql, rows)
+    return format_response(question, sql, rows), sql
 
 
 def main() -> None:
